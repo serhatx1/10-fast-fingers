@@ -35,7 +35,6 @@ export default {
     }
     const box = ref()
 
-    const allWidth=ref(0)
     const words = ref(shuffle(data.value));
     const bg = ref();
     const bgArr = ref(new Array(words.value.length).fill(null));
@@ -47,84 +46,75 @@ export default {
       correctWords: 0,
       wrongWords: 0,
       search:"",
-      resultPop:false
+      resultPop:false,
+      wpm:0,
+      perMinute:0
     });
     const firstKey = ref(false);
     onMounted( function(){
         width.value = document.querySelectorAll('.wordContainer');
+        
+
+
+
+
       
     })
     
-watchEffect(() => {
-  console.log(obj.search)
-  if(obj.search==""){
+watchEffect(async() => {
+  if(obj.search[obj.search.length-1]===" "){
+    obj.search=obj.search.slice(0,obj.search.length-1)
+     keySpace()
+    obj.search=""
+    return;
+  }
+  else if(obj.search==obj.currWord.slice(0,obj.search.length)){
+    bg.value=true
+  }
+  else{
+    bg.value=false
+  }
+
+  if(obj.search.length==0){
     bg.value=null
   }
-})
-    const keyfunc = function (inputWord) {
-      if(obj.search==""){
-        bg.value=null
-      }
   
-    if (obj.currWord === inputWord) {
-        bgArr.value[obj.index] = true;
-        bg.value = null;
-        obj.correctWords += 1;
-    } else {
-        bgArr.value[obj.index] = false;
-        bg.value = null;
-        obj.wrongWords += 1;
-    }
+})
+  
     
-    obj.index += 1;
-    obj.currWord = words.value[obj.index];
     
-    allWidth.value += width.value[obj.index].offsetWidth + 16;
     
-    if (allWidth.value >= 1200) {
-        allWidth.value = allWidth.value % 1200;
-        words.value = words.value.slice(obj.index);
-        obj.index = 0;
-    }
-    
-};
+
 
 
 
     const keySpace=()=>{
-      if(obj.search==""){
-        bg.value=null
-      }
-    const i = obj.search.lastIndexOf(" ")
-    const extractedSubstring = obj.search.substring(i + 1);
-  const inputWord = i !== -1 ? obj.search.slice(i + 1) : obj.search;
-  const trimedWord = obj.search.trim()
-    keyfunc(trimedWord);
-    if(i!=-1)
-    obj.search = extractedSubstring;
-    else
-    obj.search=""
-    bg.value=null
-
-
-    }
-    const keyCheck = function (e) {
-      if(obj.search.length==0){
-        bg.value=null
-      }
-        if(obj.search.indexOf(" ")!==-1){
-          return keySpace()
-        }
-
-        let val = obj.search.trim()
-        if (obj.currWord.substring(0, obj.search.length) ===val&&obj.search.length!==0) {
-          bg.value = true;
-        } else if(obj.search.length!==0) {
-          bg.value = false;
-        }
+      if(obj.search===obj.currWord){
+        bgArr.value[obj.index] = true;
+        bg.value = null;
+        obj.correctWords += 1;
+        obj.wpm+=obj.search.length
+        
+        
       
-    };
+      }
+      else{
+      bgArr.value[obj.index] = false;
+        bg.value = null;
+        obj.wrongWords += 1;
+  }
+      obj.index += 1;
+      obj.currWord = words.value[obj.index];
+    if (width.value[obj.index].offsetTop !==width.value[obj.index-1].offsetTop ) {
+        words.value = words.value.slice(obj.index);
+        obj.index = 0;
+    }
+      
 
+  return;
+    }
+    
+  
   
 
 
@@ -132,6 +122,7 @@ watchEffect(() => {
     const timeStart = function (): void {
       let interval = setInterval(function () {
         obj.time = obj.time - 1;
+        obj.perMinute=(15*(obj.wpm)/(60-obj.time)).toFixed(2)
         if (obj.time === 0) {
           obj.resultPop=true
           clearInterval(interval);
@@ -146,7 +137,7 @@ watchEffect(() => {
     };
 
    
-    return { words, obj, keyStart, firstKey, keySpace, keyCheck, bg, bgArr,box };
+    return { words, obj, keyStart, firstKey, keySpace, bg, bgArr,box };
   }
 };
 </script>
@@ -171,21 +162,26 @@ watchEffect(() => {
     </div>
     <div class="searchInput"> 
       <input 
-      :disabled="results"
+        :disabled="obj.resultPop"
+         autocomplete="off"
         type="text" 
         name="search" 
         id="search" 
-        @keyup="keyCheck(), firstKey === false && keyStart()"
+        @keyup="firstKey === false && keyStart()"
         v-model="obj.search" 
         placeholder="Enter"
       >      
+          <div class="wpm">
+        {{obj.perMinute}} WPM
+
+      </div>
       <div class="timeContainer">
         {{ obj.time }}
       </div>
+  
     </div>
       <div class="results" v-if="obj.resultPop">
-  <Results :correctWords="obj.correctWords" :wrongWords="obj.wrongWords"/>
-      {{obj.wrongWords}}
+  <Results :correctWords="obj.correctWords" :wrongWords="obj.wrongWords" :wpm="obj.wpm/4"/>
       </div>
   </div>
   
@@ -199,6 +195,7 @@ watchEffect(() => {
   align-items: center;
   justify-content: center;
   display: flex;
+  
 }
 
 .boxofwords .allwords {
@@ -214,7 +211,7 @@ watchEffect(() => {
 }
 
 .boxofwords .allwords .wordContainer {
-  margin: 3px 4px;
+  padding: 3px 4px;
   height: 75px;
 }
 
@@ -238,16 +235,18 @@ watchEffect(() => {
   height: 90%;
   padding: 15px;
   font-size: 21px;
-  border: none;
+  border: 3px solid #cb00eabe;
   outline: none;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
 }
 
 .timeContainer {
   width: 15%;
-  background: rgba(31, 0, 36, 0.664);
+  background: #fff;
+  border: 3px solid #cb00eabe;
+
   height: 70px;
-  color: #fff;
+  color: #000000;
   font-size: 21px;
   display: flex;
   align-items: center;
@@ -277,5 +276,21 @@ watchEffect(() => {
   text-align: left;
   background: #fff;
   padding: 30px;
+  font-size: 25px;
+  
+}
+
+.wpm{
+  width: 25%;
+   background: #fff;
+  border: 3px solid #cb00eabe;
+  height: 70px;
+  font-size: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+
 }
 </style>

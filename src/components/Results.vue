@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div>Your wpm = {{ correctWords + wrongWords }}</div>
-    <div>Correct words: {{ correctWords }}</div>
-    <div>Wrong words: {{ wrongWords }}</div>
+    <div class="resultDiv">Your wpm = {{ wpm }}</div>
+    <div class="resultDiv">Correct words: {{ correctWords }}</div>
+    <div class="resultDiv">Wrong words: {{ wrongWords }}</div>
   </div>
 </template>
 
@@ -18,10 +18,18 @@ export default {
     wrongWords: {
       type: Number,
       required: true
+    },
+    wpm: {
+      type: Number,
+      required: true
     }
   }
 }
 </script>
 
 <style>
+.resultDiv{
+  padding: 5px;
+
+}
 </style>
