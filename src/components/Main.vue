@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, watchEffect } from "vue";
 import Results from "./Results.vue"
 export default {
   components:{
@@ -47,30 +47,24 @@ export default {
       correctWords: 0,
       wrongWords: 0,
       search:"",
-      resultPop:true
+      resultPop:false
     });
     const firstKey = ref(false);
     onMounted( function(){
         width.value = document.querySelectorAll('.wordContainer');
       
     })
-    const keySpace=()=>{
-    const i = obj.search.lastIndexOf(" ")
-    const extractedSubstring = obj.search.substring(i + 1);
-
-
-    console.log(i)
-  const inputWord = i !== -1 ? obj.search.slice(i + 1) : obj.search;
-  const trimedWord = obj.search.trim()
-    keyfunc(trimedWord);
-    if(i!=-1)
-    obj.search = extractedSubstring;
-    else
-    obj.search=""
-
-
-    }
+    
+watchEffect(() => {
+  console.log(obj.search)
+  if(obj.search==""){
+    bg.value=null
+  }
+})
     const keyfunc = function (inputWord) {
+      if(obj.search==""){
+        bg.value=null
+      }
   
     if (obj.currWord === inputWord) {
         bgArr.value[obj.index] = true;
@@ -97,14 +91,35 @@ export default {
 
 
 
+    const keySpace=()=>{
+      if(obj.search==""){
+        bg.value=null
+      }
+    const i = obj.search.lastIndexOf(" ")
+    const extractedSubstring = obj.search.substring(i + 1);
+  const inputWord = i !== -1 ? obj.search.slice(i + 1) : obj.search;
+  const trimedWord = obj.search.trim()
+    keyfunc(trimedWord);
+    if(i!=-1)
+    obj.search = extractedSubstring;
+    else
+    obj.search=""
+    bg.value=null
 
-    const keyCheck = function () {
+
+    }
+    const keyCheck = function (e) {
+      if(obj.search.length==0){
+        bg.value=null
+      }
+        if(obj.search.indexOf(" ")!==-1){
+          return keySpace()
+        }
 
         let val = obj.search.trim()
-        console.log()
-        if (obj.currWord.substring(0, obj.search.length) ===val) {
+        if (obj.currWord.substring(0, obj.search.length) ===val&&obj.search.length!==0) {
           bg.value = true;
-        } else {
+        } else if(obj.search.length!==0) {
           bg.value = false;
         }
       
@@ -117,7 +132,7 @@ export default {
     const timeStart = function (): void {
       let interval = setInterval(function () {
         obj.time = obj.time - 1;
-        if (obj.time === 58) {
+        if (obj.time === 0) {
           obj.resultPop=true
           clearInterval(interval);
         }
@@ -147,7 +162,7 @@ export default {
             active: obj.index === index,
             pastBg: bgArr[index] === true && obj.index > index,
             pastBgFalse: bgArr[index] === false && obj.index > index,
-             bg:obj.index==index&& bg==true,
+            bg:obj.index==index&& bg==true,
             bgfalse: obj.index==index&&bg==false,
           }">
           {{ word }}
@@ -156,11 +171,11 @@ export default {
     </div>
     <div class="searchInput"> 
       <input 
+      :disabled="results"
         type="text" 
         name="search" 
         id="search" 
         @keyup="keyCheck(), firstKey === false && keyStart()"
-        @keyup.space="keySpace"
         v-model="obj.search" 
         placeholder="Enter"
       >      
