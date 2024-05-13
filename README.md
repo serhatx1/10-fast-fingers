@@ -15,4 +15,4 @@ https://github.com/serhatx1/10-fast-fingers/assets/49308319/9d312eca-c3b2-41c0-b
 ### Installation
 
 1. Clone the repository:
-   git clone https://github.com/your-username/typing-speed-test.git
+   git clone https://github.com/serhatx1/10-fast-fingers
